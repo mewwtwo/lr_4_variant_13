@@ -1,0 +1,6 @@
+write 0 15
+write 1 7
+read 0
+read 1
+string
+read 0
