@@ -49,7 +49,6 @@ cmake --build build --config Release
 |---|---|---|
 | macOS / Linux | `./build/lr_4_variant_13` | `./build/create_input` |
 | Windows, Visual Studio | `build\Release\lr_4_variant_13.exe` | `build\Release\create_input.exe` |
-| Windows, MinGW | `build\lr_4_variant_13.exe` | `build\create_input.exe` |
 
 Програма без аргументів обробляє файли `input/expected.txt`, `input/even.txt`, `input/mostly_string.txt`. Для кожного виконується 1, 2 і 3 потоки по 10 запусків, виводиться середній час та підсумкова таблиця.
 
