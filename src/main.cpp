@@ -1,84 +1,76 @@
 // Dmytro Demchuk K-25
-#include "fields.hpp"
-#include <chrono>
-#include <fstream>
+#include <array>
+#include <exception>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <string>
-#include <thread>
+#include <vector>
 
-struct Result {
-    unsigned long long checksum = 0;
-    unsigned long long operations = 0;
-    bool ok = true;
+#include "benchmark.hpp"
+#include "operations.hpp"
+
+namespace {
+
+constexpr int kRuns = 10;
+constexpr int kMaxThreads = 3;
+const char* const kFiles[] = {"input/expected.txt", "input/even.txt", "input/mostly_string.txt"};
+
+struct FileResult {
+    std::string name;
+    std::array<double, kMaxThreads> averageMs{};
 };
 
-bool apply(const std::string& command, std::istream& input, Fields& data, Result& result) {
-    if (command == "string") {
-        result.checksum += data.getText().size();
-        return true;
+double measure(const std::vector<Operation>& operations, int threads) {
+    double total = 0;
+    Run run{};
+    for (int i = 0; i < kRuns; ++i) {
+        run = runOnce(operations, threads);
+        total += run.milliseconds;
     }
-    int field;
-    if (!(input >> field) || field < 0 || field > 1) return false;
-    if (command == "read") {
-        result.checksum += static_cast<unsigned int>(data.get(field));
-        return true;
-    }
-    if (command == "write") {
-        int value;
-        if (!(input >> value)) return false;
-        data.set(field, value);
-        return true;
-    }
-    return false;
+    std::cout << "threads=" << threads << " operations=" << operations.size()
+              << " runs=" << kRuns << " avg_ms=" << total / kRuns
+              << " checksum=" << run.checksum << '\n';
+    return total / kRuns;
 }
 
-void runFile(const std::string& path, Result& result) {
-    std::ifstream input(path);
-    if (!input) { result.ok = false; return; }
-    Fields data;
-    std::string command;
-    while (input >> command) {
-        if (!apply(command, input, data, result)) {
-            result.ok = false;
-            return;
-        }
-        ++result.operations;
+FileResult measureFile(const std::string& path) {
+    const std::vector<Operation> operations = loadOperations(path);
+    FileResult result{std::filesystem::path(path).filename().string(), {}};
+    std::cout << result.name << '\n';
+    for (int threads = 1; threads <= kMaxThreads; ++threads) {
+        result.averageMs[threads - 1] = measure(operations, threads);
     }
-    if (!input.eof()) result.ok = false;
+    return result;
 }
 
-int main(int argc, char** argv) {
-    if (argc < 3 || argc > 5) {
-        std::cerr << "Usage: run_tests <1|2|3> <input1> [input2] [input3]\n";
+void printTable(const std::vector<FileResult>& results) {
+    std::cout << "\nAverage time, ms (" << kRuns << " runs)\n"
+              << std::left << std::setw(28) << "file";
+    for (int threads = 1; threads <= kMaxThreads; ++threads) {
+        std::cout << std::right << std::setw(12) << (std::to_string(threads) + " thr.");
+    }
+    std::cout << '\n' << std::fixed << std::setprecision(2);
+    for (const auto& result : results) {
+        std::cout << std::left << std::setw(28) << result.name;
+        for (const double ms : result.averageMs) std::cout << std::right << std::setw(12) << ms;
+        std::cout << '\n';
+    }
+}
+
+}
+
+int main() {
+#ifndef NDEBUG
+    std::cerr << "Warning: debug build, the measured time is not reliable\n";
+#endif
+    try {
+        std::vector<FileResult> results;
+        for (const char* path : kFiles) results.push_back(measureFile(path));
+        printTable(results);
+    } catch (const std::exception& error) {
+        std::cerr << "Error: " << error.what() << '\n';
         return 1;
     }
-    int count = 0;
-    try {
-        std::size_t used = 0;
-        count = std::stoi(argv[1], &used);
-        if (used != std::string(argv[1]).size()) return 1;
-    } catch (...) { return 1; }
-    if (count < 1 || count > 3 || argc != count + 2) return 1;
-
-    Result a, b, c;
-    const auto start = std::chrono::steady_clock::now();
-    std::thread first(runFile, argv[2], std::ref(a));
-    std::thread second, third;
-    if (count > 1) second = std::thread(runFile, argv[3], std::ref(b));
-    if (count > 2) third = std::thread(runFile, argv[4], std::ref(c));
-    first.join();
-    if (second.joinable()) second.join();
-    if (third.joinable()) third.join();
-    const auto end = std::chrono::steady_clock::now();
-
-    double ms = std::chrono::duration<double, std::milli>(end - start).count();
-    bool ok = a.ok && b.ok && c.ok;
-    std::cout << std::fixed << std::setprecision(3)
-              << "threads=" << count
-              << " operations=" << a.operations + b.operations + c.operations
-              << " time_ms=" << ms
-              << " checksum=" << a.checksum + b.checksum + c.checksum
-              << " status=" << (ok ? "OK" : "ERROR") << '\n';
-    return ok ? 0 : 2;
+    return 0;
 }

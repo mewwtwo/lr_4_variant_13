@@ -1,9 +1,18 @@
-expected threads=1 operations=300000 time_ms=26.255 checksum=89715345127 status=OK
-expected threads=2 operations=600000 time_ms=36.741 checksum=180086989228 status=OK
-expected threads=3 operations=900000 time_ms=41.869 checksum=270548535777 status=OK
-even threads=1 operations=300000 time_ms=39.027 checksum=59965485834 status=OK
-even threads=2 operations=600000 time_ms=37.722 checksum=119973954986 status=OK
-even threads=3 operations=900000 time_ms=41.015 checksum=180071383748 status=OK
-mostly_string threads=1 operations=300000 time_ms=22.181 checksum=2978507648 status=OK
-mostly_string threads=2 operations=600000 time_ms=31.833 checksum=5982748069 status=OK
-mostly_string threads=3 operations=900000 time_ms=37.125 checksum=8996839686 status=OK
+expected.txt
+threads=1 operations=3000000 runs=10 avg_ms=51.2374 checksum=898919529226
+threads=2 operations=3000000 runs=10 avg_ms=88.833 checksum=898883010146
+threads=3 operations=3000000 runs=10 avg_ms=136.493 checksum=898109559591
+even.txt
+threads=1 operations=3000000 runs=10 avg_ms=59.343 checksum=600952971047
+threads=2 operations=3000000 runs=10 avg_ms=93.4265 checksum=601012450001
+threads=3 operations=3000000 runs=10 avg_ms=157.423 checksum=600860302307
+mostly_string.txt
+threads=1 operations=3000000 runs=10 avg_ms=138.692 checksum=30130408487
+threads=2 operations=3000000 runs=10 avg_ms=244.607 checksum=30162850337
+threads=3 operations=3000000 runs=10 avg_ms=384.476 checksum=29996158851
+
+Average time, ms (10 runs)
+file                              1 thr.      2 thr.      3 thr.
+expected.txt                       51.24       88.83      136.49
+even.txt                           59.34       93.43      157.42
+mostly_string.txt                 138.69      244.61      384.48

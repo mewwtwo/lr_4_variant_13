@@ -1,34 +1,35 @@
 // Dmytro Demchuk K-25
 #include "fields.hpp"
+
 #include <stdexcept>
 
+namespace {
+
+void checkField(int field) {
+    if (field < 0 || field >= Fields::kCount) throw std::out_of_range("field number");
+}
+
+}
+
 int Fields::get(int field) const {
-    if (field == 0) {
-        std::lock_guard<std::mutex> lock(first_);
-        return values_[0];
-    }
-    if (field == 1) {
-        std::lock_guard<std::mutex> lock(second_);
-        return values_[1];
-    }
-    throw std::out_of_range("field");
+    checkField(field);
+    std::lock_guard<std::mutex> guard(slots_[field].lock);
+    return slots_[field].value;
 }
 
 void Fields::set(int field, int value) {
-    if (field == 0) {
-        std::lock_guard<std::mutex> lock(first_);
-        values_[0] = value;
-        return;
-    }
-    if (field == 1) {
-        std::lock_guard<std::mutex> lock(second_);
-        values_[1] = value;
-        return;
-    }
-    throw std::out_of_range("field");
+    checkField(field);
+    std::lock_guard<std::mutex> guard(slots_[field].lock);
+    slots_[field].value = value;
 }
 
-std::string Fields::getText() const {
-    std::scoped_lock lock(first_, second_);
-    return std::to_string(values_[0]) + " " + std::to_string(values_[1]);
+Fields::operator std::string() const {
+    int first = 0;
+    int second = 0;
+    {
+        std::scoped_lock guard(slots_[0].lock, slots_[1].lock);
+        first = slots_[0].value;
+        second = slots_[1].value;
+    }
+    return std::to_string(first) + " " + std::to_string(second);
 }
