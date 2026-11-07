@@ -20,6 +20,7 @@
 | `input/even.txt` | усі частоти рівні |
 | `input/mostly_string.txt` | 96% операцій `string` |
 | `output/output_results.txt` | результати вимірювань |
+| `docs/workflow.png` | схема роботи програми |
 | `report.pdf` | звіт |
 
 ## Збирання
